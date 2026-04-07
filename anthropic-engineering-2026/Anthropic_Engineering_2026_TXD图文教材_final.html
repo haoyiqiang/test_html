@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anthropic Engineering 2026 技术博客分析</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fff; color: #333; line-height: 1.6; height: 100vh; overflow: hidden; display: flex; }
+        #sidebar { width: 240px; background: #f8f9fa; border-right: 1px solid #e9ecef; display: flex; flex-direction: column; height: 100vh; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #e9ecef; }
+        .sidebar-header h1 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .sidebar-header .subtitle { font-size: 14px; color: #666; }
+        #toc { flex: 1; overflow-y: auto; padding: 20px 0; }
+        .toc-item { padding: 8px 20px; cursor: pointer; font-size: 14px; color: #555; }
+        .toc-item:hover { background: #e9ecef; }
+        .toc-item.active { background: #e3f2fd; color: #1976d2; border-left: 3px solid #1976d2; padding-left: 17px; }
+        .toc-item.level-2 { padding-left: 32px; font-size: 13px; color: #666; }
+        #right-panel { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        #content-area { flex: 1; overflow-y: auto; padding: 40px; position: relative; }
+        .page { display: none; max-width: 800px; margin: 0 auto; width: 100%; }
+        .page.active { display: block; }
+        .breadcrumb { font-size: 14px; color: #666; margin-bottom: 30px; padding-bottom: 10px; border-bottom: 1px solid #e9ecef; }
+        h2 { font-size: 28px; font-weight: 700; margin-bottom: 20px; }
+        h3 { font-size: 22px; font-weight: 600; margin: 30px 0 15px; }
+        p { margin-bottom: 16px; font-size: 16px; line-height: 1.7; }
+        ul { margin: 16px 0 16px 24px; }
+        li { margin-bottom: 8px; }
+        .highlight { background: #fff9c4; padding: 2px 4px; border-radius: 3px; font-weight: 600; }
+        .example { background: #f8f9fa; border-left: 4px solid #1976d2; padding: 20px; margin: 25px 0; }
+        .example-title { font-size: 18px; font-weight: 600; color: #1976d2; margin-bottom: 15px; }
+        .steps { margin: 20px 0; }
+        .step { display: flex; margin-bottom: 12px; }
+        .step-number { background: #1976d2; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; margin-right: 12px; }
+        .answer { background: #e8f5e9; border-left: 4px solid #1E803D; padding: 16px; margin: 20px 0; }
+        .answer-label { font-weight: 600; color: #1E803D; margin-bottom: 8px; }
+        .recall-clue { background: #f3e5f5; border-left: 4px solid #7b1fa2; padding: 16px; margin: 20px 0; }
+        .recall-clue .type { font-weight: 600; color: #7b1fa2; margin-bottom: 8px; font-size: 14px; }
+        .figure-placeholder { background: #f5f5f5; border: 2px dashed #ccc; padding: 40px 20px; margin: 25px 0; text-align: center; color: #666; font-style: italic; }
+        #nav-bar { position: absolute; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e9ecef; padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-button { padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .nav-button:hover:not(:disabled) { background: #1565c0; }
+        .nav-button:disabled { background: #ccc; cursor: not-allowed; }
+        .page-indicator { font-size: 14px; color: #666; }
+        .hamburger { display: none; position: fixed; top: 20px; left: 20px; z-index: 1000; background: #1976d2; color: white; width: 44px; height: 44px; border-radius: 4px; border: none; font-size: 20px; cursor: pointer; }
+        @media (max-width: 768px) {
+            #sidebar { position: fixed; left: -240px; top: 0; transition: left 0.3s; }
+            #sidebar.active { left: 0; }
+            .hamburger { display: flex; align-items: center; justify-content: center; }
+            #content-area { padding: 20px; padding-top: 70px; }
+            #nav-bar { padding: 12px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="hamburger" id="hamburger">☰</button>
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h1>Anthropic Engineering 2026</h1>
+            <div class="subtitle">技术博客分析</div>
+        </div>
+        <div id="toc"></div>
+    </nav>
+    <div id="right-panel">
+        <div id="content-area">
+            <div class="page active" data-index="0">
+                <div class="breadcrumb">首页</div>
+                <h2>Anthropic Engineering 2026 技术博客分析</h2>
+                <p>本课程基于Anthropic Engineering团队在2026年发布的技术博客，深入分析AI工程实践、基础设施优化、智能体开发等关键技术领域。</p>
+                <h3>学完本课，你将能回答：</h3>
+                <ul>
+                    <li>基础设施噪声如何影响智能体编码评估结果？</li>
+                    <li>Claude Code自动模式如何平衡安全性和便利性？</li>
+                    <li>长运行应用需要什么样的专门设计？</li>
+                    <li>如何评估AI智能体的能力才更准确可靠？</li>
+                    <li>多智能体如何协作完成复杂软件项目？</li>
+                    <li>如何设计能有效区分人类和AI能力的评估？</li>
+                </ul>
+            </div>
+            <div class="page" data-index="1">
+                <div class="breadcrumb">第一部分 › 介绍</div>
+                <h2>第一部分：基础设施噪声——为什么相同的AI模型在不同环境下表现不同？</h2>
+                <p>在AI智能体编码评估中，我们通常关注模型本身的能力差异，但往往忽略了一个关键因素：基础设施配置。</p>
+                <div class="recall-clue">
+                    <div class="type">类比锚点</div>
+                    <p>可以这样理解，<strong class="highlight">"将基础设施噪声比作'体育比赛中不同质量的跑道对运动员成绩的影响'，因为它们共享'环境因素干扰真实能力测量'的特征"</strong>。</p>
+                </div>
+            </div>
+            <div class="page" data-index="2">
+                <div class="breadcrumb">第一部分 › 实验分析</div>
+                <h3>基础设施噪声量化实验</h3>
+                <div class="example">
+                    <div class="example-title">实验背景</div>
+                    <div class="example-content">
+                        <p>在内部实验中，Terminal-Bench 2.0上最资源和最少资源设置之间的差距为6个百分点（p < 0.01）。</p>
+                    </div>
+                </div>
+                <div class="figure-placeholder">[图：资源配置梯度实验设计图]</div>
+                <h4>实验步骤</h4>
+                <div class="steps">
+                    <div class="step"><div class="step-number">1</div><div class="step-content">设计实验：设置六个资源配置级别</div></div>
+                    <div class="step"><div class="step-number">2</div><div class="step-content">运行评估：在相同条件下运行Terminal-Bench 2.0</div></div>
+                    <div class="step"><div class="step-number">3</div><div class="step-content">收集数据：记录成功率和基础设施错误率</div></div>
+                    <div class="step"><div class="step-number">4</div><div class="step-content">统计分析：计算p值，确定统计显著性</div></div>
+                    <div class="step"><div class="step-number">5</div><div class="step-content">得出结论：资源配置差异可导致高达6个百分点的评估差异</div></div>
+                </div>
+                <div class="answer"><div class="answer-label">实验结论</div><p>资源配置差异可导致智能体编码评估结果产生显著差异，最大差异可达6个百分点（p < 0.01）</p></div>
+                <div class="recall-clue"><div class="type">判定口诀</div><p>记住，<strong class="highlight">"看到'智能体编码评估'和'排行榜微小差距'，立刻想到'检查基础设施配置是否一致'"</strong>。</p></div>
+            </div>
+            <div class="page" data-index="3">
+                <div class="breadcrumb">第一部分 › 阈值分析</div>
+                <h3>3x资源临界点分析</h3>
+                <p>从这个实验可以看出，基础设施配置对评估结果的影响不容忽视。但影响的性质会随着资源配置水平而变化。</p>
+                <div class="example">
+                    <div class="example-title">阈值发现</div>
+                    <div class="example-content">
+                        <p>在Terminal-Bench规范的约3x以下，额外资源解决了基础设施可靠性问题。在3x标记以上，额外资源开始积极帮助智能体解决以前无法解决的问题。</p>
+                    </div>
+                </div>
+                <div class="figure-placeholder">[图：成功率随资源配置变化的曲线图]</div>
+                <h4>分析步骤</h4>
+                <div class="steps">
+                    <div class="step"><div class="step-number">1</div><div class="step-content">观察数据趋势：分析不同资源配置下的成功率变化</div></div>
+                    <div class="step"><div class="step-number">2</div><div class="step-content">识别拐点：发现3x资源配置处趋势变化</div></div>
+                    <div class="step"><div class="step-number">3</div><div class="step-content">分析原因：3x以下主要解决基础设施可靠性，3x以上改变评估内容</div></div>
+                    <div class="step"><div class="step-number">4</div><div class="step-content">得出结论：3x是资源配置影响评估性质的关键阈值</div></div>
+                </div>
+                <div class="answer"><div class="answer-label">分析结论</div><p>3x资源配置是临界阈值，低于此值主要影响基础设施稳定性，高于此值改变评估测量内容</p></div>
+                <div class="recall-clue"><div class="type">易错警示</div><p>需要注意的是，<strong class="highlight">"警告'将3x以下和以上的效应混为一谈'，正确做法是'区分基础设施稳定性和评估性质改变两个不同目标'"</strong>。</p></div>
+            </div>
+            <div class="page" data-index="4">
+                <div class="breadcrumb">第二部分 › 介绍</div>
+                <h2>第二部分：AI安全自动化——如何在减少人工干预的同时确保安全？</h2>
+                <p>随着AI智能体在开发工作流中的广泛应用，一个突出的矛盾出现了：安全性与便利性的权衡。</p>
+                <div class="recall-clue">
+                    <div class="type">类比锚点</div>
+                    <p>可以这样理解，<strong class="highlight">"将自动模式双层防御比作'机场安检的双重检查（行李扫描+人工检查）'，因为它们共享'多层过滤确保安全'的特征"</strong>。</p>
+                </div>
+            </div>
+            <div class="page" data-index="5">
+                <div class="breadcrumb">第二部分 › 系统架构</div>
+                <h3>Claude Code自动模式的双层防御</h3>
+                <div class="example">
+                    <div class="example-title">架构描述</div>
+                    <div class="example-content">
+                        <p>自动模式使用两层防御：一层用于Claude读取的内容，一层用于Claude执行的操作。</p>
+                    </div>
+                </div>
+                <div class="figure-placeholder">[图：自动模式系统架构图]</div>
+                <h4>架构解析</h4>
+                <div class="steps">
+                    <div class="step"><div class="step-number">1</div><div class="step-content">识别防御需求：需要防止恶意输入和危险操作</div></div>
+                    <div class="step"><div class="step-number">2</div><div class="step-content">设计输入层：服务器端提示注入探针扫描工具输出</div></div>
+                    <div class="step"><div class="step-number">3</div><div class="step-content">设计输出层：转录分类器评估操作安全性</div></div>
+                    <div class="step"><div class="step-number">4</div><div class="step-content">集成两层防御：建立协同工作机制</div></div>
+                    <div class="step"><div class="step-number">5</div><div class="step-content">验证效果：通过实验验证防御有效性</div></div>
+                </div>
+                <div class="answer"><div class="answer-label">架构特点</div><p>双层防御架构：输入层提示注入探针 + 输出层转录分类器</p></div>
+                <div class="recall-clue"><div class="type">判定口诀</div><p>记住，<strong class="highlight">"看到'AI安全工具设计'，立刻想到'输入过滤+输出审查的双层架构'"</strong>。</p></div>
+            </div>
+            <div class="page" data-index="6">
+                <div class="breadcrumb">第二部分 › 威胁分析</div>
+                <h3>智能体危险行为的四个原因</h3>
+                <div class="example">
+                    <div class="example-title">威胁模型分类</div>
+                    <div class="example-content">
+                        <p>智能体可能出于四个原因采取危险行动：1. 过度热心的行为；2. 诚实的错误；3. 提示注入；4. 未对齐的模型。</p>
+                    </div>
+                </div>
+                <div class="figure-placeholder">[图：威胁模型分类图]</div>
+                <h4>分析步骤</h4>
+                <div class="steps">
+                    <div class="step"><div class="step-number">1</div><div class="step-content">收集案例：从实际使用中收集危险行动案例</div></div>
+                    <div class="step"><div class="step-number">2</div><div class="step-content">分析原因：识别每个案例的根本原因</div></div>
+                    <div class="step"><div class="step-number">3</div><div class="step-content">建立分类：将原因归纳为四个类别</div></div>
+                    <div class="step"><div class="step-number">4</div><div class="step-content">验证分类：用新案例验证分类的完备性</div></div>
+                    <div class="step"><div class="step-number">5</div><div class="step-content">应用分类：基于分类设计相应的防御策略</div></div>
+                </div>
+                <div class="answer"><div class="answer-label">分析结论</div><p>四个危险行动原因类别：过度热心行为、诚实错误、提示注入、未对齐模型</p></div>
+                <div class="recall-clue"><div class="type">易错警示</div><p>需要注意的是，<strong class="highlight">"警告'只关注外部攻击忽略内部错误'，正确做法是'全面覆盖意图性和非意图性威胁'"</strong>。</p></div>
+            </div>
+            <div class="page" data-index="7">
+                <div class="breadcrumb">第三部分 › 介绍</div>
+                <h2>第三部分：长运行系统设计——如何
