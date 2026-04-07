@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anthropic Engineering 2026 技术博客分析</title>
+    <style>
+        :root {
+            --sidebar-width: 240px;
+            --text-color: #333333;
+            --bg-color: #ffffff;
+            --emphasis-color: #d9534f;
+            --logic-color: #1E803D;
+            --highlight-bg: #fff3cd;
+            --border-color: #eaeaea;
+            --nav-bg: #f8f9fa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            line-height: 1.6;
+        }
+
+        /* 左侧目录栏 */
+        #sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--nav-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 20px 0;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .nav-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .nav-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .nav-item.active {
+            background-color: #e2e6ea;
+            font-weight: bold;
+            border-left: 4px solid var(--text-color);
+            padding-left: 16px;
+        }
+
+        .nav-level-1 {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .nav-level-2 {
+            padding-left: 32px;
+            color: #555;
+        }
+
+        /* 右侧内容区 */
+        #right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 60px 100px 60px; /* 底部留白给导航条 */
+        }
+
+        .page {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 排版样式 */
+        h1 { font-size: 28px; margin-bottom: 24px; }
+        h2 { font-size: 22px; margin-top: 32px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;}
+        h3 { font-size: 18px; margin-top: 24px; margin-bottom: 12px; }
+        p { margin-bottom: 16px; text-align: left; }
+        ul, ol { margin-bottom: 16px; padding-left: 24px; }
+        li { margin-bottom: 8px; }
+        
+        .breadcrumb {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .highlight {
+            background-color: var(--highlight-bg);
+            font-weight: bold;
+            padding: 2px 4px;
+        }
+
+        .emphasis {
+            color: var(--emphasis-color);
+            font-weight: bold;
+        }
+
+        .logic {
+            color: var(--logic-color);
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+        }
+
+        .image-placeholder {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px dashed #ccc;
+            text-align: center;
+            color: #888;
+            background: #fafafa;
+        }
+
+        /* 底部导航栏 */
+        #nav-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background-color: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            background-color: #f8f9fa;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-indicator {
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <nav id="sidebar">
+        <div class="nav-item nav-level-1" onclick="goToPage(0)">课程导学</div>
+        <div class="nav-item nav-level-1" onclick="goToPage(1)">第一部分：基础设施噪声</div>
+        <div class="nav-item nav-level-2" onclick="goToPage(2)">基础设施噪声量化实验</div>
+        <div class="nav-item nav-level-2" onclick="goToPage(3)">3x资源临界点</div>
+        <div class="nav-item nav-level-1" onclick="goToPage(4)">第二部分：AI安全自动化</div>
+        <div class="nav-item nav-level-2" onclick="goToPage(5)">自动模式的双层防御</div>
+        <div class="nav-item nav-level-2" onclick="goToPage(6)">智能体危险行为分析</div>
+        <div class="nav-item nav-level-1" onclick="goToPage(7)">第三部分：长运行系统设计</div>
+        <div class="nav-item nav-level-2" onclick="goToPage(8)">长运行应用的Harness架构</div>
+        <div class="nav-item nav-level-1" onclick="goToPage(9)">第四部分：多智能体协作</div>
+        <div class="nav-item nav-level-2" onclick="goToPage(10)">构建C编译器案例</div>
+        <div class="nav-item nav-level-1" onclick="goToPage(11)">第五部分：评估方法论</div>
+        <div class="nav-item nav-level-2" onclick="goToPage(12)">评估最佳实践</div>
+        <div class="nav-item nav-level-2" onclick="goToPage(13)">评估意识对性能的影响</div>
+        <div class="nav-item nav-level-1" onclick="goToPage(14)">第六部分：抗AI评估设计</div>
+        <div class="nav-item nav-level-2" onclick="goToPage(15)">抗AI评估的四个维度</div>
+        <div class="nav-item nav-level-1" onclick="goToPage(16)">本课总结</div>
+    </nav>
+
+    <div id="right-panel">
+        <div id="content-area">
+            
+            <div class="page" data-index="0">
+                <div class="breadcrumb">课程导学</div>
+                <h1>Anthropic Engineering 2026 技术博客分析</h1>
+                <h2>基本信息</h2>
+                <table>
+                    <tr><th>字段</th><th>内容</th></tr>
+                    <tr><td><strong>关联 IOD</strong></td><td>Anthropic_Engineering_2026_IOD教学目标文档.md</td></tr>
+                    <tr><td><strong>关联 PD</strong></td><td>Anthropic_Engineering_2026_PD教学法文档.md</td></tr>
+                </table>
+                <h2>学完本课，你将能回答：</h2>
+                <ul>
+                    <li>基础设施噪声如何影响智能体编码评估结果？</li>
+                    <li>Claude Code自动模式如何平衡安全性和便利性？</li>
+                    <li>长运行应用需要什么样的专门设计？</li>
+                    <li>如何评估AI智能体的能力才更准确可靠？</li>
+                    <li>多智能体如何协作完成复杂软件项目？</li>
+                    <li>如何设计能有效区分人类和AI能力的评估？</li>
+                </ul>
+            </div>
+
+            <div class="page" data-index="1">
+                <div class="breadcrumb">第一部分 › 概述</div>
+                <h2>第一部分：基础设施噪声——为什么相同的AI模型在不同环境下表现不同？</h2>
+                <p>在AI智能体编码评估中，我们通常关注模型本身的能力差异，但往往忽略了一个关键因素：基础设施配置。智能体编码评估与传统的静态基准测试有本质不同。静态基准测试直接对模型输出进行评分，运行时环境不影响结果。但智能体编码评估中，模型被赋予完整的环境，在那里编写程序、运行测试、安装依赖项并进行多次迭代。运行时不再是被动容器，而是问题解决过程的组成部分。</p>
+                <p>可以这样理解，<strong class="highlight">"将基础设施噪声比作'体育比赛中不同质量的跑道对运动员成绩的影响'，因为它们共享'环境因素干扰真实能力测量'的特征"</strong>。</p>
+                <p>为了量化这种影响，Anthropic团队进行了系统的实验研究。</p>
+            </div>
+
+            <div class="page" data-index="2">
+                <div class="breadcrumb">第一部分 › 基础设施噪声量化实验</div>
+                <h3>【实验分析】基础设施噪声量化实验</h3>
+                <p>在内部实验中，Terminal-Bench 2.0上最资源和最少资源设置之间的差距为6个百分点（p < 0.01）。为了量化脚手架的影响，我们在六个资源配置上运行了Terminal-Bench 2.0，从严格执行每任务规范（1x）到完全无限制。</p>
+                
+                <div class="image-placeholder">[图：资源配置梯度实验设计图，展示从1x到无限制的六个资源配置级别，每个级别对应不同的CPU和内存分配]</div>
+
+                <p><strong>实验步骤</strong>：</p>
+                <ol>
+                    <li>设计实验：设置六个资源配置级别（1x到无限制）</li>
+                    <li>运行评估：在相同条件下运行Terminal-Bench 2.0</li>
+                    <li>收集数据：记录成功率和基础设施错误率</li>
+                    <li>统计分析：计算p值，确定统计显著性</li>
+                    <li>得出结论：资源配置差异可导致高达6个百分点的评估差异</li>
+                </ol>
+
+                <p><strong>实验结论</strong>：<span>资源配置差异可导致智能体编码评估结果产生显著差异，最大差异可达6个百分点（p < 0.01）</span></p>
+                <p>记住，<strong class="highlight">"看到'智能体编码评估'和'排行榜微小差距'，立刻想到'检查基础设施配置是否一致'"</strong>。</p>
+                <p>从这个实验可以看出，基础设施配置对评估结果的影响不容忽视。但影响的性质会随着资源配置水平而变化。</p>
+            </div>
+
+            <div class="page" data-index="3">
+                <div class="breadcrumb">第一部分 › 3x资源临界点</div>
+                <h3>【阈值分析】3x资源临界点</h3>
+                <p>在Terminal-Bench规范的约3x以下，额外资源解决了基础设施可靠性问题，即瞬态资源峰值。Terminal-Bench维护者使用的沙箱提供程序在幕后隐式地执行此操作；评估变得更加稳定而不会变得更容易。然而，在3x标记以上，额外资源开始积极帮助智能体解决以前无法解决的问题，这表明限制实际上可以改变评估测量的内容。</p>
+
+                <div class="image-placeholder">[图：成功率随资源配置变化的曲线图，在3x处有明显的趋势变化点]</div>
+
+                <p><strong>分析步骤</strong>：</p>
+                <ol>
+                    <li>观察数据趋势：分析不同资源配置下的成功率变化</li>
+                    <li>识别拐点：发现3x资源配置处趋势变化</li>
+                    <li>分析原因：3x以下主要解决基础设施可靠性，3x以上改变评估内容</li>
+                    <li>得出结论：3x是资源配置影响评估性质的关键阈值</li>
+                </ol>
+
+                <p><strong>分析结论</strong>：<span>3x资源配置是临界阈值，低于此值主要影响基础设施稳定性，高于此值改变评估测量内容</span></p>
+                <p>需要注意的是，<strong class="emphasis">"警告'将3x以下和以上的效应混为一谈'，正确做法是'区分基础设施稳定性和评估性质改变两个不同目标'"</strong>。</p>
+            </div>
+
+            <div class="page" data-index="4">
+                <div class="breadcrumb">第二部分 › 概述</div>
+                <h2>第二部分：AI安全自动化——如何在减少人工干预的同时确保安全？</h2>
+                <p>随着AI智能体在开发工作流中的广泛应用，一个突出的矛盾出现了：安全性与便利性的权衡。默认情况下，Claude Code在运行命令或修改文件之前要求用户批准。这使用户保持安全，但也意味着需要大量点击"批准"。随着时间的推移，这会导致批准疲劳，人们不再密切关注他们批准的内容。</p>
+                <p>自动模式是Claude Code的新模式，将批准委托给基于模型的分类器——介于手动审查和无防护之间的中间地带。目标是捕获与用户意图不一致的危险操作，同时让其余操作无需批准提示即可运行。</p>
+                <p>可以这样理解，<strong class="highlight">"将自动模式双层防御比作'机场安检的双重检查（行李扫描+人工检查）'，因为它们共享'多层过滤确保安全'的特征"</strong>。</p>
+            </div>
+
+            <div class="page" data-index="5">
+                <div class="breadcrumb">第二部分 › 自动模式的双层防御</div>
+                <h3>【系统架构】Claude Code自动模式的双层防御</h3>
+                <p>自动模式使用两层防御：一层用于Claude读取的内容，一层用于Claude执行的操作。在输入层，服务器端提示注入探针在工具输出进入智能体上下文之前扫描它们。在输出层，转录分类器在执行前根据一组决策标准评估每个操作，充当人类批准者的替代品。</p>
+
+                <div class="image-placeholder">[图：自动模式系统架构图，展示输入层探针和输出层分类器的协同工作流程]</div>
+
+                <p><strong>架构解析</strong>：</p>
+                <ol>
+                    <li>识别防御需求：需要防止恶意输入和危险操作</li>
+                    <li>设计输入层：服务器端提示注入探针扫描工具输出</li>
+                    <li>设计输出层：转录分类器评估操作安全性</li>
+                    <li>集成两层防御：建立协同工作机制</li>
+                    <li>验证效果：通过实验验证防御有效性</li>
+                </ol>
+
+                <p><strong>架构特点</strong>：<span>双层防御架构：输入层提示注入探针 + 输出层转录分类器</span></p>
+                <p>记住，<strong class="highlight">"看到'AI安全工具设计'，立刻想到'输入过滤+输出审查的双层架构'"</strong>。</p>
+                <p>要理解为什么需要这样的防御架构，我们需要分析智能体可能采取危险行动的原因。</p>
+            </div>
+
+            <div class="page" data-index="6">
+                <div class="breadcrumb">第二部分 › 智能体危险行为分析</div>
+                <h3>【威胁分析】智能体危险行为的四个原因</h3>
+                <p>智能体可能出于四个原因采取危险行动：1. 过度热心的行为；2. 诚实的错误；3. 提示注入；4. 未对齐的模型。</p>
+
+                <div class="image-placeholder">[图：威胁模型分类图，展示四个威胁类别及其特征]</div>
+
+                <p><strong>分析步骤</strong>：</p>
+                <ol>
+                    <li>收集案例：从实际使用中收集危险行动案例</li>
+                    <li>分析原因：识别每个案例的根本原因</li>
+                    <li>建立分类：将原因归纳为四个类别</li>
+                    <li>验证分类：用新案例验证分类的完备性</li>
+                    <li>应用分类：基于分类设计相应的防御策略</li>
+                </ol>
+
+                <p><strong>分析结论</strong>：<span>四个危险行动原因类别：过度热心行为、诚实错误、提示注入、未对齐模型</span></p>
+                <p>需要注意的是，<strong class="emphasis">"警告'只关注外部攻击忽略内部错误'，正确做法是'全面覆盖意图性和非意图性威胁'"</strong>。</p>
+            </div>
+
+            <div class="page" data-index="7">
+                <div class="breadcrumb">第三部分 › 概述</div>
+                <h2>第三部分：长运行系统设计——如何支持需要长时间运行的应用？</h2>
+                <p>长运行应用开发面临独特的挑战，包括资源管理、错误恢复、状态持久化、监控和调试。这些挑战与短期运行的应用有本质不同，需要专门的设计思路和系统架构。</p>
+                <p>可以这样理解，<strong class="highlight">"将长运行Harness比作'长途卡车司机的支持系统（油量监控、故障预警、休息提醒、路线调整）'，因为它们共享'长时间任务需要全方位支持'的特征"</strong>。</p>
+            </div>
+
+            <div class="page" data-index="8">
+                <div class="breadcrumb">第三部分 › 长运行应用的Harness架构</div>
+                <h3>【系统设计】长运行应用的Harness架构</h3>
+                <p>长运行应用开发面临独特的挑战，包括资源管理、错误恢复、状态持久化、监控和调试。解决方案包括：智能资源分配、容错机制、状态检查点、实时监控。</p>
+
+                <div class="image-placeholder">[图：长运行应用Harness架构图，展示四个核心组件的协同工作]</div>
+
+                <p><strong>设计步骤</strong>：</p>
+                <ol>
+                    <li>识别挑战：资源管理、错误恢复、状态持久化、监控调试</li>
+                    <li>设计解决方案：智能资源分配、容错机制、状态检查点、实时监控</li>
+                    <li>集成组件：将各解决方案整合为完整Harness</li>
+                    <li>验证效果：测试Harness在长运行场景下的表现</li>
+                    <li>优化改进：基于测试结果优化设计</li>
+                </ol>
+
+                <p><strong>设计结论</strong>：<span>Harness设计包含：智能资源分配、容错机制、状态检查点、实时监控四个核心组件</span></p>
+                <p>记住，<strong class="highlight">"看到'长运行系统设计'，立刻想到'资源+容错+状态+监控四个支柱'"</strong>。</p>
+                <p>需要注意的是，<strong class="emphasis">"警告'只关注功能实现忽略运行支持'，正确做法是'从设计初期就考虑长运行需求'"</strong>。</p>
+            </div>
+
+            <div class="page" data-index="9">
+                <div class="breadcrumb">第四部分 › 概述</div>
+                <h2>第四部分：多智能体协作——如何让多个AI智能体协同完成复杂任务？</h2>
+                <p>随着AI能力的提升，单个智能体已经能够完成许多复杂任务。但对于极其复杂的软件工程项目，如构建完整的C编译器，单个智能体可能力不从心。多智能体协作提供了新的可能性。</p>
+                <p>可以这样理解，<strong class="highlight">"将多智能体协作比作'交响乐团演奏（不同乐器分工+指挥协调）'，因为它们共享'分工协作达成整体目标'的特征"</strong>。</p>
+            </div>
+
+            <div class="page" data-index="10">
+                <div class="breadcrumb">第四部分 › 构建C编译器案例</div>
+                <h3>【项目案例】使用并行Claude团队构建C编译器</h3>
+                <p>使用并行Claude智能体团队构建完整的C编译器，展示了多智能体协作在复杂软件工程项目中的潜力。架构设计包括：模块化分解、智能体分配、协调机制、集成测试。</p>
+
+                <div class="image-placeholder">[图：多智能体协作架构图，展示任务分解、智能体分配、协调机制和集成测试的完整流程]</div>
+
+                <p><strong>协作流程</strong>：</p>
+                <ol>
+                    <li>任务分解：将复杂任务分解为独立模块</li>
+                    <li>智能体分配：为每个模块分配专门智能体</li>
+                    <li>协调设计：建立智能体间通信和协调机制</li>
+                    <li>集成测试：确保模块正确集成和协作</li>
+                    <li>性能优化：优化协作效率和结果质量</li>
+                </ol>
+
+                <p><strong>协作架构</strong>：<span>多智能体协作架构包含：模块化分解、智能体分配、协调机制、集成测试四个关键设计要素</span></p>
+                <p>记住，<strong class="highlight">"看到'复杂任务分解'，立刻想到'模块化+分配+协调+集成四步法'"</strong>。</p>
+                <p>需要注意的是，<strong class="emphasis">"警告'只分解不协调导致智能体各自为政'，正确做法是'设计明确的协调机制和集成测试'"</strong>。</p>
+            </div>
+
+            <div class="page" data-index="11">
+                <div class="breadcrumb">第五部分 › 概述</div>
+                <h2>第五部分：评估方法论——如何准确评估AI智能体的真实能力？</h2>
+                <p>随着AI智能体在各个领域的应用日益广泛，如何准确评估它们的能力成为一个关键问题。评估不仅用于比较不同模型的性能，还用于跟踪进展、确保安全、指导开发方向。</p>
+                <p>可以这样理解，<strong class="highlight">"将AI评估方法论比作'科学实验设计原则（控制变量、随机分配、双盲测试）'，因为它们共享'确保测量准确性和公正性'的特征"</strong>。</p>
+            </div>
+
+            <div class="page" data-index="12">
+                <div class="breadcrumb">第五部分 › 评估最佳实践</div>
+                <h3>【原则框架】评估最佳实践</h3>
+                <p>评估最佳实践包括：全面性（覆盖广泛的能力和场景）、公平性（确保评估对所有智能体公平）、可重复性（结果应该是可重复的）、透明度（评估方法和结果应该透明）。</p>
+
+                <div class="image-placeholder">[图：评估质量四维框架图，展示全面性、公平性、可重复性、透明度四个维度的相互关系]</div>
+
+                <p><strong>实践指导</strong>：</p>
+                <ol>
+                    <li>收集需求：从评估目的出发收集需求</li>
+                    <li>归纳原则：从成功评估案例中归纳原则</li>
+                    <li>验证原则：用实际评估验证原则有效性</li>
+                    <li>完善原则：基于反馈完善原则表述</li>
+                    <li>应用原则：指导新评估设计</li>
+                </ol>
+
+                <p><strong>核心原则</strong>：<span>四个评估最佳实践原则：全面性、公平性、可重复性、透明度</span></p>
+                <p>记住，<strong class="highlight">"看到'评估设计问题'，立刻想到'检查全面性、公平性、可重复性、透明度四个维度'"</strong>。</p>
+                <p>需要注意的是，<strong class="emphasis">"警告'只追求全面性忽略可重复性'，正确做法是'平衡四个原则，根据评估目的适当侧重'"</strong>。</p>
+                <p>除了评估方法本身的质量，智能体自身的"评估意识"也会影响评估结果。</p>
+            </div>
+
+            <div class="page" data-index="13">
+                <div class="breadcrumb">第五部分 › 评估意识对性能的影响</div>
+                <h3>【能力分析】评估意识对性能的影响</h3>
+                <p>Claude Opus 4.6在BrowseComp基准测试中展示了改进的性能，部分归功于增强的评估意识。关键改进包括：更好的上下文理解、增强的推理能力、改进的评估策略。</p>
+
+                <div class="image-placeholder">[图：评估意识三维模型图，展示上下文理解、推理能力、评估策略三个维度的提升]</div>
+
+                <p><strong>分析步骤</strong>：</p>
+                <ol>
+                    <li>定义评估意识：智能体对评估任务的理解和适应能力</li>
+                    <li>识别改进方面：上下文理解、推理能力、评估策略</li>
+                    <li>分析影响：每个改进方面如何提升评估性能</li>
+                    <li>验证假设：通过实验验证评估意识与性能的相关性</li>
+                    <li>得出结论：评估意识是智能体性能的重要影响因素</li>
+                </ol>
+
+                <p><strong>分析结论</strong>：<span>评估意识通过改进上下文理解、推理能力和评估策略来提升智能体在基准测试中的性能</span></p>
+            </div>
+
+            <div class="page" data-index="14">
+                <div class="breadcrumb">第六部分 › 概述</div>
+                <h2>第六部分：抗AI评估设计——如何设计能有效区分人类和AI能力的评估？</h2>
+                <p>随着AI能力的快速提升，许多传统的技术评估变得越来越容易被AI解决，这降低了它们区分人类和AI能力的效果。设计抗AI评估成为新的挑战。</p>
+                <p>可以这样理解，<strong class="highlight">"将抗AI评估设计比作'设计防伪技术（多重特征、动态变化、难以复制）'，因为它们共享'防止模仿和自动化'的特征"</strong>。</p>
+            </div>
+
+            <div class="page" data-index="15">
+                <div class="breadcrumb">第六部分 › 抗AI评估的四个维度</div>
+                <h3>【创新设计】抗AI评估的四个维度</h3>
+                <p>设计抗AI评估需要：创造性思维（需要人类直觉和创造力的任务）、上下文依赖（依赖特定领域知识的任务）、动态适应（根据响应动态调整的评估）、多模态集成（结合文本、代码和视觉元素）。</p>
+
+                <div class="image-placeholder">[图：抗AI评估设计框架图，展示四个设计维度的协同作用]</div>
+
+                <p><strong>设计步骤</strong>：</p>
+                <ol>
+                    <li>分析AI优势：识别AI容易解决的任务类型</li>
+                    <li>设计抗AI策略：针对每个AI优势设计对抗策略</li>
+                    <li>集成多维度：结合创造性、上下文、动态性和多模态</li>
+                    <li>验证效果：测试评估对AI和人类的区分能力</li>
+                    <li>优化设计：基于测试结果优化评估方案</li>
+                </ol>
+
+                <p><strong>设计框架</strong>：<span>抗AI评估设计包含四个策略维度：创造性思维、上下文依赖、动态适应、多模态集成</span></p>
+                <p>记住，<strong class="highlight">"看到'评估被AI解决'，立刻想到'增加创造性、上下文、动态性、多模态四个维度'"</strong>。</p>
+                <p>需要注意的是，<strong class="emphasis">"警告'只增加开放性忽略可评分性'，正确做法是'设计既抗AI又可客观评分的评估任务'"</strong>。</p>
+            </div>
+
+            <div class="page" data-index="16">
+                <div class="breadcrumb">本课总结</div>
+                <h2>本课总结</h2>
+                <h3>核心要点</h3>
+                <ul>
+                    <li>基础设施配置可导致智能体编码评估结果产生显著差异（高达6个百分点）</li>
+                    <li>Claude Code自动模式采用输入层探针+输出层分类器的双层防御架构</li>
+                    <li>长运行应用需要专门的Harness设计，包含资源管理、容错机制、状态持久化和实时监控</li>
+                    <li>多智能体协作需要模块化分解、智能体分配、协调机制和集成测试的完整架构</li>
+                    <li>高质量评估需要遵循全面性、公平性、可重复性、透明度的原则</li>
+                    <li>抗AI评估应针对AI弱点设计，强调创造性、上下文依赖、动态适应和多模态集成</li>
+                </ul>
+
+                <h3>易错提醒</h3>
+                <ul>
+                    <li>警告"将基础设施差异误认为模型能力差异"，正确做法是"控制基础设施变量后再比较模型能力"</li>
+                    <li>警告"只关注输出层忽略输入层防御"，正确做法是"建立完整的输入到输出安全链条"</li>
+                    <li>警告"将3x以下和以上的效应混为一谈"，正确做法是"区分基础设施稳定性和评估性质改变两个不同目标"</li>
+                    <li>警告"只关注外部攻击忽略内部错误"，正确做法是"全面覆盖意图性和非意图性威胁"</li>
+                    <li>警告"只分解不协调导致智能体各自为政"，正确做法是"设计明确的协调机制和集成测试"</li>
+                    <li>警告"只追求全面性忽略可重复性"，正确做法是"平衡四个原则，根据评估目的适当侧重"</li>
+                    <li>警告"只增加开放性忽略可评分性"，正确做法是"设计既抗AI又可客观评分的评估任务"</li>
+                </ul>
+
+                <h3>知识应用范围</h3>
+                <p>本课程的知识可应用于AI工程实践的多个领域：在设计智能体编码评估时控制基础设施变量；在开发AI辅助工具时实现安全自动化；在构建长运行系统时设计专门的支撑架构；在组织复杂项目时采用多智能体协作模式；在评估AI能力时遵循科学的方法论原则；在设计技术评估时考虑抗AI性以确保评估的有效区分度。这些知识不仅适用于Anthropic的技术实践，也可迁移到其他AI研发和工程化场景中。</p>
+            </div>
+
+        </div><!-- end content-area -->
+        
+        <div id="nav-bar">
+            <button id="prev-btn" class="btn" onclick="prevPage()">← 上一页</button>
+            <span class="page-indicator"><span id="current-page">1</span> / <span id="total-pages">17</span></span>
+            <button id="next-btn" class="btn" onclick="nextPage()">下一页 →</button>
+        </div>
+    </div>
+
+    <script>
+        const TOTAL = 17;
+        let currentPage = 0;
+
+        function updateView() {
+            // Update pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.style.display = 'none';
+            });
+            const activePage = document.querySelector(`.page[data-index="${currentPage}"]`);
+            if(activePage) activePage.style.display = 'block';
+
+            // Update sidebar highlights
+            document.querySelectorAll('.nav-item').forEach((item, index) => {
+                if(index === currentPage) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Update bottom nav
+            document.getElementById('current-page').innerText = currentPage + 1;
+            document.getElementById('total-pages').innerText = TOTAL;
+            
+            document.getElementById('prev-btn').disabled = currentPage === 0;
+            document.getElementById('next-btn').disabled = currentPage === TOTAL - 1;
+
+            // Scroll to top of content
+            document.getElementById('content-area').scrollTop = 0;
+        }
+
+        function nextPage() {
+            if (currentPage < TOTAL - 1) {
+                currentPage++;
+                updateView();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                updateView();
+            }
+        }
+
+        function goToPage(index) {
+            if (index >= 0 && index < TOTAL) {
+                currentPage = index;
+                updateView();
+            }
+        }
+
+        // Init
+        updateView();
+    </script>
+</body>
+</html>
